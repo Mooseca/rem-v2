@@ -11,7 +11,7 @@ let BasicImporter = require('../../structures/basicImporter');
 const types = require('../../structures/constants').SONG_TYPES;
 let Song = require('../../structures/song');
 let ytdl = require('ytdl-core');
-let youtube_dl = require('youtube-dl');
+let youtube_dl = require('youtube-dl-exec');
 Promise.promisifyAll(youtube_dl);
 Promise.promisifyAll(ytdl);
 class YoutubeImporter extends BasicImporter {
