@@ -3,7 +3,7 @@
  */
 let Song = require('../../structures/song');
 let BasicImporter = require('../../structures/basicImporter');
-let youtube_dl = require('youtube-dl');
+let youtube_dl = require('youtube-dl-exec');
 Promise.promisifyAll(youtube_dl);
 let SongTypes = require('../../structures/constants').SONG_TYPES;
 let regex = /(?:http(?:s|):\/\/|)(?:www\.|)twitch\.tv\/.+/;
