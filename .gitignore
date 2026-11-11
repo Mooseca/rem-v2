@@ -2,11 +2,12 @@
 /node_modules
 cmd.bat
 /.idea
-/config
+/config/*
 /docs
 /temp
 /audio
 /logs
 .env
 /dist
-.env-safe
+.env-safe/data
+!/config/main.example.json

@@ -44,7 +44,7 @@ class AddToQueue extends Command {
             live: true,
             needsYtdl: false,
             isOpus: false,
-            wsUrl: 'wss://listen.moe/api/v2/socket',
+            wsUrl: 'wss://listen.moe/gateway_v2',
             radio: 'listen.moe'
         });
         try {

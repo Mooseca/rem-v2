@@ -19,19 +19,19 @@ module.exports = {
     //     required: false
     // },
     osu_token: {
-        required: true
+        required: false
     },
     // osu_path: {
     //     required: false
     // },
     osu_username: {
-        required: true
+        required: false
     },
     osu_password: {
-        required: true
+        required: false
     },
     environment: {
-        required: true
+        required: false
     },
     // discord_bots_token: {
     //     required: true
@@ -40,34 +40,34 @@ module.exports = {
     //     required: true
     // },
     sentry_token: {
-        required: true
+        required: false
     },
     anilist_secret: {
-        required: true
+        required: false
     },
     lbsearch_sfw_key: {
-        required: true
+        required: false
     },
     lbsearch_nsfw_key: {
-        required: true
+        required: false
     },
     mashape_key: {
-        required: true
+        required: false
     },
     shard_token: {
-        required: true
+        required: false
     },
     soundcloud_key: {
-        required: true
+        required: false
     },
     mongo_hostname: {
         required: true
     },
     master_hostname: {
-        required: true
+        required: false
     },
     redis_enabled: {
-        required: true
+        required: false
     },
     redis_hostname: {
         required: false

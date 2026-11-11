@@ -3,13 +3,8 @@
  */
 //uwu
 const winston = require('winston');
-let useCrystal = remConfig.use_crystal;
-let VoiceConnectionManager;
-if (useCrystal) {
-    VoiceConnectionManager = require('eris-novum').VoiceConnectionManager;
-    // VoiceConnectionManager = require('../../../Rem NEXT/voice/eris-novum/src/exports').VoiceConnectionManager;
-}
 let Eris = require('eris');
+const {RemVoiceManager} = require('./modules/audio/voice');
 const StatsD = require('hot-shots');
 const dogstatsd = new StatsD({host: remConfig.statsd_host});
 const guildModel = require('./DB/guild');
@@ -18,8 +13,10 @@ const url = remConfig.mongo_hostname;
 let Connector = require('./structures/connector');
 let ModuleManager = require('./modules/moduleManager');
 mongoose.Promise = Promise;
+mongoose.set('strictQuery', false);
 mongoose.connect(url, (err) => {
-    if (err) return winston.error('Failed to connect to the database!');
+    if (err) return winston.error(`Failed to connect to the database! ${err}`);
+    winston.info('Connected to the database');
 });
 let redis = require("redis");
 const stat = `rem_${remConfig.environment}`;
@@ -71,10 +68,10 @@ class Shard {
         }
         // }
         let redisClient = redis.createClient({
-            port: remConfig.redis_port,
-            host: remConfig.redis_hostname
+            port: remConfig.redis_port || 6379,
+            host: remConfig.redis_hostname || 'localhost'
         });
-        redisClient.select(remConfig.redis_database);
+        redisClient.select(remConfig.redis_database || 0);
         redisClient.on("error", (err) => {
             console.log("Error " + err);
         });
@@ -105,21 +102,12 @@ class Shard {
                 'MESSAGE_UPDATE': true,
                 'MESSAGE_DELETE': true
             },
-            crystal: useCrystal
+            intents: ['guilds', 'guildMembers', 'guildMessages', 'guildMessageReactions', 'guildVoiceStates', 'directMessages', 'messageContent']
         };
         winston.info(options);
         let bot = new Eris(remConfig.token, options);
         // console.log('Created bot');
-        if (useCrystal) {
-            bot.voiceConnections = new VoiceConnectionManager({
-                redis: {
-                    port: remConfig.redis_voice_port,
-                    host: remConfig.redis_voice_hostname,
-                    password: remConfig.redis_voice_auth ? remConfig.redis_voice_auth : ''
-                },
-                userID: remConfig.bot_id
-            }, parseInt(this.id));
-        }
+        bot.voiceConnections = new RemVoiceManager(bot);
         this.bot = bot;
         global.rem = bot;
         blocked((ms) => {
@@ -224,7 +212,7 @@ class Shard {
         this.sendStats();
         guildModel.findOne({id: Guild.id}, (err, guild) => {
             if (err) {
-                this.Raven.captureError(err);
+                this.Raven.captureException(err);
                 return winston.error(err);
             }
             if (guild) {

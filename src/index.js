@@ -39,7 +39,6 @@ global.remConfig = config;
 if (remConfig.use_ws) {
     wsWorker = require('./ws/worker');
 }
-require('longjohn');
 if (!process.env.environment && !remConfig.environment) {
     winston.warn('No environment config was found, setting the environment config to development!');
     remConfig.environment = 'development';
@@ -58,19 +57,6 @@ for (let key in configTemplate) {
             }
         }
     }
-}
-const Raven = require('raven');
-if (!remConfig.no_error_tracking) {
-    Raven.config(remConfig.sentry_token, {
-        release: version,
-        environment: remConfig.environment
-    }).install(() => {
-        winston.error('Oh no I died because of an unhandled error!');
-        process.exit(1);
-    });
-    logger.info('Initializing error tracking!')
-} else {
-    logger.warn('No error tracking is used!')
 }
 let client;
 if (remConfig.use_ws) {
@@ -96,7 +82,7 @@ if (remConfig.use_ws) {
             console.log(`Restarting Client for Resharding!`);
         }
         const env = {SHARD_ID: data.sid, SHARD_COUNT: data.sc, CONFIG: JSON.stringify(config)};
-        client = child_process.fork('./shardStarter.js', {options: {env: Object.assign(process.env, env)}});
+        client = child_process.fork(require('path').join(__dirname, 'shardStarter.js'), {options: {env: Object.assign(process.env, env)}});
         client.on('exit', (code, status) => {
             console.log(code, status);
             process.exit(code);
@@ -124,7 +110,7 @@ if (remConfig.use_ws) {
     })
 } else {
     const env = {SHARD_ID: 0, SHARD_COUNT: 1, CONFIG: JSON.stringify(config)};
-    client = child_process.fork('./shardStarter.js', {options: {env: Object.assign(process.env, env)}});
+    client = child_process.fork(require('path').join(__dirname, 'shardStarter.js'), {options: {env: Object.assign(process.env, env)}});
     client.on('exit', (code, status) => {
         console.log(code, status);
     });

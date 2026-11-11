@@ -37,6 +37,7 @@ class Radio extends Song {
 
     end () {
         this.ended = true;
+        clearInterval(this.heartbeat);
         try {
             this.ws.close(4000, 'not needed anymore');
         } catch (e) {
@@ -48,14 +49,31 @@ class Radio extends Song {
     onDisconnect (code, number) {
         console.error(code);
         console.error(number);
+        clearInterval(this.heartbeat);
         if (!this.ended) {
-            this.connect();
+            setTimeout(() => {
+                if (!this.ended) this.connect();
+            }, 5000);
         }
     }
 
     onMessage (msg, flags) {
         try {
             let actualMessage = JSON.parse(msg);
+            // listen.moe gateway v2: op 0 says how often to heartbeat, op 1 carries the song
+            if (actualMessage.op === 0 && actualMessage.d && actualMessage.d.heartbeat) {
+                clearInterval(this.heartbeat);
+                this.heartbeat = setInterval(() => {
+                    if (this.ws && this.ws.readyState === websocket.OPEN) {
+                        this.ws.send(JSON.stringify({op: 9}));
+                    }
+                }, actualMessage.d.heartbeat);
+            }
+            if (actualMessage.op === 1 && actualMessage.d && actualMessage.d.song) {
+                let song = actualMessage.d.song;
+                let artists = (song.artists || []).map((a) => a.nameRomaji || a.name).join(', ');
+                this.updateTitle(`${artists ? artists + ' - ' : ''}${song.title} (${this.options.radio})`);
+            }
             if (actualMessage.song_name && actualMessage.artist_name) {
                 this.updateTitle(`${actualMessage.artist_name} - ${actualMessage.song_name} (${this.options.radio})`);
             }

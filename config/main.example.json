@@ -1,0 +1,18 @@
+{
+  "owner": "Your name",
+  "owner_id": "Your Discord user ID",
+  "token": "Bot token from the Discord developer portal",
+  "client_id": "Bot application ID",
+  "bot_id": "Bot application ID (same as client_id)",
+  "environment": "production",
+  "no_error_tracking": true,
+  "use_ws": false,
+  "mongo_hostname": "mongodb://mongo:27017/rem",
+  "redis_hostname": "redis",
+  "redis_enabled": true,
+  "redis_database": 2,
+  "osu_token": "",
+  "soundcloud_key": "",
+  "cleverbot_api_user": "",
+  "cleverbot_api_key": ""
+}

@@ -7,7 +7,6 @@ global.TranslatableError = require('./structures/TranslatableError');
 require('source-map-support').install({
     handleUncaughtExceptions: false
 });
-require('longjohn');
 const version = require('../package.json').version;
 const winston = require('winston')
 const logger = winston.createLogger({
@@ -32,19 +31,7 @@ try {
     process.exit(1);
 }
 global.remConfig = config;
-const Raven = require('raven');
-if (!remConfig.no_error_tracking) {
-    Raven.config(remConfig.sentry_token, {
-        release: version,
-        environment: remConfig.environment
-    }).install(() => {
-        winston.error('Oh no I died because of an unhandled error!');
-        process.exit(1);
-    });
-    logger.info('Initializing error tracking!')
-} else {
-    logger.warn('No error tracking is used!')
-}
+const Raven = require('./structures/errorTracker');
 let Shard = require('./Shard');
 const erisOptions = {
     autoreconnect: true,

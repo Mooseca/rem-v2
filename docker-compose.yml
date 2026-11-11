@@ -1,0 +1,19 @@
+services:
+  rem:
+    build: .
+    restart: unless-stopped
+    depends_on:
+      - mongo
+      - redis
+    volumes:
+      - ./config:/usr/src/rem/config:ro
+  mongo:
+    image: mongo:7
+    restart: unless-stopped
+    volumes:
+      - ./data/mongo:/data/db
+  redis:
+    image: redis:8-alpine
+    restart: unless-stopped
+    volumes:
+      - ./data/redis:/data

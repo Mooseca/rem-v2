@@ -8,11 +8,8 @@ let twitch = require('./twitchResolver');
 let youtubePlaylist = require('./youtubePlaylistResolver');
 const winston = require('winston');
 let crypto = require('crypto');
-let keys;
 let Cache;
 let searchCache;
-let KeyManager = require('../keyManager');
-let axios = require('axios');
 if (remConfig.redis_enabled) {
     Cache = require('./../../structures/redisCache');
     winston.debug('Using Redis Cache for Searches!');
@@ -21,23 +18,8 @@ if (remConfig.redis_enabled) {
     searchCache = Cache;
     winston.debug('Using Map Cache for Searches!');
 }
-try {
-    if (process.env.secret_keys_name) {
-        keys = require(`/run/secrets/${process.env.secret_keys_name}`).keys;
-    } else {
-        keys = require('../../../config/keys.json').keys;
-    }
-} catch (e) {
-    winston.error(e);
-    winston.error('The file with the youtube keys could not be loaded!');
-}
-let km = new KeyManager(keys);
-let opts = {
-    maxResults: 10,
-    key: km.getKey(),
-    type: 'video',
-    order: 'relevance'
-};
+let ytdlp = require('../audio/ytdlp');
+const SEARCH_RESULTS = 10;
 class SongResolver {
     constructor(redis) {
         this.redis = redis;
@@ -106,23 +88,14 @@ class SongResolver {
             // console.log(results);
             return results;
         } else {
-            let res;
-            try {
-                res = await this.searchRequest(search);
-            } catch (e) {
-                winston.error(e);
-                winston.info('Switching Keys!');
-                km.nextKey();
-                opts.key = km.getKey();
-                res = await this.searchRequest(search);
-            }
-            if (res.items.length > 0) {
-                // console.log(res);
-                let actualResult = res.items.map((item) => {
+            let res = await ytdlp.getInfo(`ytsearch${SEARCH_RESULTS}:${search}`, ['--flat-playlist']);
+            let entries = (res.entries || []).filter((e) => e && e.id);
+            if (entries.length > 0) {
+                let actualResult = entries.map((item) => {
                     return {
-                        id: item.id.videoId,
-                        url: `https://youtube.com/watch?v=${item.id.videoId}`,
-                        title: item.snippet.title
+                        id: item.id,
+                        url: `https://youtube.com/watch?v=${item.id}`,
+                        title: item.title
                     }
                 });
                 await searchCache.set(`youtube_search_${searchHash}`, actualResult);
@@ -131,22 +104,6 @@ class SongResolver {
                 throw new TranslatableError({t: 'generic.error', message: 'empty search returned!'});
             }
         }
-    }
-
-    async searchRequest(search) {
-        let res = await axios({
-            url: 'https://www.googleapis.com/youtube/v3/search',
-            method: 'get',
-            params: {
-                part: 'snippet',
-                type: 'video',
-                maxResults: opts.maxResults,
-                key: opts.key,
-                order: opts.order,
-                q: search
-            }
-        });
-        return res.data;
     }
 
     removeBracket(url) {

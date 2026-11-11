@@ -9,8 +9,6 @@ let fs = require('fs');
 let SongTypes = require('../../structures/constants').SONG_TYPES;
 let ytr = require('../resolver/youtubeResolver');
 let icy = require('icy');
-const WolkeStream = require('./WolkeStream');
-let ytdl = require('ytdl-core');
 // let BufferedStream = require("buffered2").BufferedStream;
 /**
  * The audio player
@@ -42,74 +40,21 @@ class Player extends EventEmitter {
      */
     async play(Song) {
         clearTimeout(this.autoLeaveTimeout);
-        if ((this.connection && this.connection.ready || this.connection && rem.options.crystal) && Song) {
+        if (this.connection && this.connection.ready && Song) {
             let link;
             let options = {};
             // console.log(Song.streamUrl);
             switch (Song.type) {
-                case SongTypes.youtube: {
-                    options.resolve = true;
-                    if (Song.isOpus) {
-                        if (!remConfig.use_crystal) {
-                            try {
-                                link = new WolkeStream(Song.streamUrl);
-                            } catch (e) {
-                                console.error(e);
-                                return this.nextSong(Song);
-                            }
-                        } else {
-                            link = Song.url;
-                        }
-                        options.format = 'webm';
-                        options.frameDuration = 20;
-                    } else {
-                        if (remConfig.use_crystal) {
-                            link = Song.url;
-                        } else {
-                            link = Song.streamUrl;
-                        }
-                        options.inputArgs = ["-reconnect", "1", "-reconnect_streamed", "1", "-reconnect_delay_max", "2"];
-                        // link = this.processStream(secondStream);
-                    }
-                    break;
-                }
-                case SongTypes.youtube_live: {
-                    options.resolve = true;
-                    if (remConfig.use_crystal) {
-                        link = Song.url;
-                    } else {
-                        link = Song.streamUrl;
-                    }
-                    options.inputArgs = ["-reconnect", "1", "-reconnect_streamed", "1", "-reconnect_delay_max", "2"];
-                    break;
-                }
-                case SongTypes.soundcloud: {
-                    if (Song.streamUrl) {
-                        link = Song.streamUrl;
-                        options.inputArgs = ["-reconnect", "1", "-reconnect_streamed", "1", "-reconnect_delay_max", "2"];
-                    } else {
-                        return this.nextSong();
-                    }
+                case SongTypes.youtube:
+                case SongTypes.youtube_live:
+                case SongTypes.soundcloud:
+                case SongTypes.twitch: {
+                    // yt-dlp fetches the audio itself, stream urls expire too fast to keep
+                    link = {ytdlp: Song.url};
                     break;
                 }
                 case SongTypes.osu: {
-                    if (!rem.options.crystal) {
-                        try {
-                            link = fs.createReadStream(Song.url);
-                        } catch (e) {
-                            this.emit('error', e);
-                        }
-                        link.on('error', (err) => {
-                            winston.error(err);
-                        });
-                    } else {
-                        return this.nextSong();
-                    }
-                    break;
-                }
-                case SongTypes.twitch: {
-                    link = Song.streamUrl;
-                    options.inputArgs = ["-reconnect", "1", "-reconnect_streamed", "1", "-reconnect_delay_max", "2"];
+                    link = Song.url;
                     break;
                 }
                 case SongTypes.radio: {
