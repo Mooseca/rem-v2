@@ -15,7 +15,7 @@ class Randon extends Command {
 
     run(msg) {
         let user = rem.users.find(u => u.id === '145162973910925312');
-        let url = user ? user.avatarURL : 'https://images-ext-2.discordapp.net/.eJwFwVEOwiAMANC7cABKC4yyy5hSjNuijgDzx3h33_uaqz_NarY521gBtL5t3YeevUprVs8XyEem9AEYIi6Uk8_oMkWPBHK7B06EgVkVBaXEUlxIzAWdeEK2R3uY3x-Blh53.Yn90NTHop7kj2cziyctpgywOIoM';
+        let url = user ? user.avatarURL : 'https://cdn.discordapp.com/embed/avatars/0.png';
         let reply = {
             embed: {
                 author: {

@@ -3,7 +3,7 @@
  */
 let Command = require('../../structures/command');
 let winston = require('winston');
-let request = require('request');
+const booru = require('../../structures/booru');
 
 // Terms to block from search (not added as hidden tags on the search because
 // kona limits searches to 6 tags, so we remove tags from the query before we
@@ -24,7 +24,7 @@ class Konachan extends Command {
         this.accessLevel = 0;
     }
 
-    run(msg) {
+    async run(msg) {
         // Force commands to only run in NSFW channels
         if (!msg.channel.nsfw) {
             return msg.channel.createMessage(this.t('nsfw-images.error-discord-not-nsfw-channel', {lngs: msg.lang}));
@@ -49,50 +49,23 @@ class Konachan extends Command {
         }
 
         msgSearch = 'order:score -rating:safe ' + searchOrig;
-        request.get('https://konachan.com/post.json', {
-            qs: {
-                limit: 200,
-                tags: msgSearch
+        try {
+            let url = await booru.randomPost({
+                url: 'https://konachan.com/post.json',
+                tags: msgSearch,
+                filter: konachanFilter
+            });
+            if (url) {
+                return msg.channel.createMessage(url);
             }
-        }, (error, response, body) => {
-            if (error) {
-                return msg.channel.createMessage(this.t('nsfw-images.error-body', {lngs: msg.lang}));
-            }
-            if (!error && response.statusCode === 200) {
-                try {
-                    body = JSON.parse(body);
-                } catch (e) {
-                    return msg.channel.createMessage(this.t('nsfw-images.error-body', {lngs: msg.lang}));
-                }
-                if (typeof body !== 'undefined') {
-                    // Filter response for bad items
-                    body = body.filter(item => {
-                        if (typeof item === 'undefined' || typeof item.tags !== 'string') return false;
-                        for (let filter of konachanFilter) {
-                            if (item.tags.indexOf(filter) > -1) {
-                                return false;
-                            }
-                        }
-                        return true;
-                    });
-
-                    if (body.length > 0) {
-                        let random = Math.floor(Math.random() * body.length);
-                        if (typeof(body[random]) !== 'undefined' && typeof (body[random].file_url) !== 'undefined') {
-                            msg.channel.createMessage(body[random].file_url);
-                        } else {
-                            msg.channel.createMessage(this.t('nsfw-images.error-body', {lngs: msg.lang}));
-                        }
-                        return;
-                    }
-                }
-
-                msg.channel.createMessage(this.t('nsfw-images.nothing-found', {
-                    lngs: msg.lang,
-                    tags: searchOrig
-                }));
-            }
-        });
+            return msg.channel.createMessage(this.t('nsfw-images.nothing-found', {
+                lngs: msg.lang,
+                tags: searchOrig
+            }));
+        } catch (e) {
+            winston.error(e.message);
+            return msg.channel.createMessage(this.t('nsfw-images.error-body', {lngs: msg.lang}));
+        }
     }
 }
 module.exports = Konachan;

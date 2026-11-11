@@ -1,13 +1,23 @@
 /**
  * Created by Julian/Wolke on 07.11.2016.
+ * Reaction images now come from nekos.best (rra.ram.moe and weeb.sh are gone).
  */
 let EventEmitter = require('eventemitter3');
-const cfg = require('../../config/main.json');
 let axios = require('axios');
 let winston = require("winston");
 
+// commands whose old image type has no nekos.best category
+const typeMap = {
+    nyan: 'neko',
+    lick: 'bleh',
+    lewd: 'blush',
+    owo: 'teehee',
+    triggered: 'angry',
+    rem: 'waifu'
+};
+
 /**
- * The base command class
+ * The base command class for reaction images
  * @extends EventEmitter
  *
  */
@@ -22,19 +32,21 @@ class Command extends EventEmitter {
      */
     async run(msg) {
         try {
-            if (cfg.use_weeb) {
-                let res = await axios.get('https://api.weeb.sh/images/random', {
-                    headers: {Authorization: cfg.weebsh_token},
-                    params: {"type": this.cmd === 'nyan' ? 'neko' : this.cmd}
-                });
-                return msg.channel.createMessage(res.data.url);
-            } else {
-                let res = await axios.get('https://rra.ram.moe/i/r', {params: {"type": this.cmd}});
-                let path = res.data.path.replace('/i/', '');
-                return msg.channel.createMessage(`https://cdn.ram.moe/${path}`);
+            let type = this.imageType || typeMap[this.cmd] || this.cmd;
+            let res = await axios.get(`https://nekos.best/api/v2/${type}`, {timeout: 10000});
+            let image = res.data.results[0];
+            let embed = {image: {url: image.url}, color: 0x00ADFF};
+            if (msg.mentions && msg.mentions.length > 0) {
+                let targets = msg.mentions.map(u => `**${u.username}**`).join(', ');
+                embed.description = `**${msg.author.username}** ➜ ${targets}`;
             }
+            if (image.anime_name || image.artist_name) {
+                embed.footer = {text: image.anime_name || `Art by ${image.artist_name}`};
+            }
+            return msg.channel.createMessage({embed});
         } catch (e) {
-            return winston.error(e);
+            winston.error(e.message);
+            return msg.channel.createMessage(this.t('generic.error', {lngs: msg.lang}));
         }
     }
 }

@@ -2,7 +2,7 @@
  * Created by julia on 27.01.2017.
  */
 let Command = require('../../structures/command');
-let axios = require('axios');
+const anilist = require('../../structures/anilist');
 let winston = require('winston');
 const Menu = require('../../structures/menu');
 class AnimeSearch extends Command {
@@ -19,23 +19,9 @@ class AnimeSearch extends Command {
         let searchQuery = msg.content.substring(msg.prefix.length + this.cmd.length + 1);
         if (!searchQuery) return await msg.channel.createMessage(this.t('generic.empty-search', {lngs: msg.lang}));
         try {
-            let authRequest = await axios.post(`https://anilist.co/api/auth/access_token`, {
-                grant_type: 'client_credentials',
-                client_id: remConfig.anilist_id,
-                client_secret: remConfig.anilist_secret
-            });
-            let accessToken = authRequest.data.access_token;
-            let animeRequest = await axios({
-                url: `https://anilist.co/api/anime/search/${encodeURI(searchQuery)}`,
-                params: {access_token: accessToken}
-            });
-            if (animeRequest.data.error) {
-                if (animeRequest.data.error.messages[0] === 'No Results.') {
-                    return msg.channel.createMessage(this.t('define.no-result', {lngs: msg.lang, term: searchQuery}));
-                }
-            }
+            let animeRequest = {data: await anilist.searchMedia('ANIME', searchQuery)};
             if (animeRequest.data.length === 1) {
-                let characters = await this.loadCharacters(animeRequest.data[0].id, accessToken);
+                let characters = animeRequest.data[0].characters;
                 let embed = this.buildResponse(msg, animeRequest.data[0], characters);
                 return msg.channel.createMessage(embed);
             } else if (animeRequest.data.length > 1) {
@@ -47,7 +33,7 @@ class AnimeSearch extends Command {
                 }
                 if (pick > -1) {
                     let anime = animeRequest.data[pick];
-                    let characters = await this.loadCharacters(anime.id, accessToken);
+                    let characters = anime.characters;
                     let embed = this.buildResponse(msg, anime, characters);
                     return msg.channel.createMessage(embed);
                 }
@@ -60,16 +46,8 @@ class AnimeSearch extends Command {
         }
     }
 
-    async loadCharacters(id, token) {
-        let characterRequest = await axios({
-            url: `https://anilist.co/api/anime/${id}/characters`,
-            params: {access_token: token}
-        });
-        return characterRequest.data.characters;
-    }
-
     buildResponse(msg, data, characters) {
-        let description = data.description.replace(/<br>/g, '');
+        let description = data.description.replace(/<br>/g, '').replace(/<\/?[a-z]+>/g, '');
         description = description.replace(/\n|\\n/g, '');
         description = description.replace(/&mdash;/g, '');
         description = description.replace(/&#039;/g, '');
@@ -109,7 +87,7 @@ class AnimeSearch extends Command {
                     },
                     {
                         "name": `:man_dancing: ${this.t('anime.characters', {lngs: msg.lang})}`,
-                        "value": `**${characterString}**`
+                        "value": characterString ? `**${characterString}**` : this.t('generic.unknown', {lngs: msg.lang})
                     }
                 ]
             }

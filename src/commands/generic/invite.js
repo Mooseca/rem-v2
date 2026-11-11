@@ -18,7 +18,7 @@ class Invite extends Command {
     }
 
     run(msg) {
-        const inviteLink = 'https://discordapp.com/oauth2/authorize?client_id=' + clientId + '&scope=bot&permissions=0';
+        const inviteLink = `https://discord.com/oauth2/authorize?client_id=${clientId}&scope=bot&permissions=3271750`;
         msg.channel.createMessage(this.t('add', {lngs: msg.lang, link: inviteLink}))
     }
 }

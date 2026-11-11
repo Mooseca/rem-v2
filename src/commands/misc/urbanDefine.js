@@ -3,7 +3,6 @@
  */
 let Command = require('../../structures/command');
 let axios = require('axios');
-let key = remConfig.mashape_key;
 let winston = require('winston');
 class UrbanDictionary extends Command {
     constructor({t}) {
@@ -19,9 +18,9 @@ class UrbanDictionary extends Command {
         let term = msg.content.substring(msg.prefix.length + this.cmd.length + 1);
         if (!term) return await msg.channel.createMessage(this.t('define.empty-search', {lngs: msg.lang}));
         try {
-            let result = await axios.get(`https://mashape-community-urban-dictionary.p.mashape.com/define`, {
-                params: {"term": term},
-                headers: {'X-Mashape-Key': key}
+            let result = await axios.get('https://api.urbandictionary.com/v0/define', {
+                params: {term},
+                timeout: 10000
             });
             if (result.data.list.length > 0) {
                 let urResult = result.data.list[0];
@@ -29,7 +28,7 @@ class UrbanDictionary extends Command {
                     embed: {
                         author: {name: 'Urbandictionary', url: urResult.permalink},
                         title: `Definition of ${term}`,
-                        description: urResult.definition,
+                        description: urResult.definition.replace(/[\[\]]/g, '').substring(0, 4000),
                         footer: {text: `Made by: ${urResult.author}| 👍 ${urResult.thumbs_up}| 👎 ${urResult.thumbs_down}`},
                         color: 0x00ADFF
                     }

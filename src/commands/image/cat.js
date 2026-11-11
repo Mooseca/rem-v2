@@ -16,9 +16,8 @@ class Cat extends Command {
 
     async run(msg) {
         try {
-            let req = await axios.get('http://random.cat/meow');
-            let url = req.data.file.replace('\\', 'g');
-            msg.channel.createMessage(url);
+            let req = await axios.get('https://api.thecatapi.com/v1/images/search', {timeout: 10000});
+            msg.channel.createMessage({embed: {image: {url: req.data[0].url}, color: 0x00ADFF}});
         } catch (e) {
             winston.error(e);
             msg.channel.createMessage(this.t('generic.error', {lngs: msg.lang}));

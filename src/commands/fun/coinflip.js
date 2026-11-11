@@ -14,17 +14,8 @@ class FlipCoin extends Command {
     }
 
     run(msg) {
-        let rand = 1 + Math.floor(Math.random() * 100);
-        let reply;
-        let url;
-        if (rand > 50) {
-            url = 'https://cdn.ram.moe/HJSEfDUbl.gif';
-            reply = 'flip.head';
-        } else {
-            url = 'https://cdn.ram.moe/Byu2fPLWg.png';
-            reply = 'flip.tail';
-        }
-        msg.channel.createMessage(this.t(reply, {lngs: msg.lang, url: url}));
+        let reply = Math.random() < 0.5 ? 'flip.head' : 'flip.tail';
+        msg.channel.createMessage(this.t(reply, {lngs: msg.lang, url: '🪙'}));
     }
 }
 module.exports = FlipCoin;

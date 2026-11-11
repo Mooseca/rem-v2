@@ -11,8 +11,7 @@
   "redis_hostname": "redis",
   "redis_enabled": true,
   "redis_database": 2,
-  "osu_token": "",
-  "soundcloud_key": "",
-  "cleverbot_api_user": "",
-  "cleverbot_api_key": ""
+  "chat_api_url": "",
+  "chat_model": "",
+  "chat_api_key": ""
 }

@@ -2,7 +2,7 @@
  * Created by julia on 27.01.2017.
  */
 let Command = require('../../structures/command');
-let axios = require('axios');
+const anilist = require('../../structures/anilist');
 let winston = require('winston');
 const Menu = require('../../structures/menu');
 class AnimeSearch extends Command {
@@ -25,21 +25,7 @@ class AnimeSearch extends Command {
         let searchQuery = msg.content.substring(msg.prefix.length + this.cmd.length + 1);
         if (!searchQuery) return await msg.channel.createMessage(this.t('generic.empty-search', {lngs: msg.lang}));
         try {
-            let authRequest = await axios.post(`https://anilist.co/api/auth/access_token`, {
-                grant_type: 'client_credentials',
-                client_id: remConfig.anilist_id,
-                client_secret: remConfig.anilist_secret
-            });
-            let accessToken = authRequest.data.access_token;
-            let characterRequest = await axios({
-                url: `https://anilist.co/api/character/search/${encodeURI(searchQuery)}`,
-                params: {access_token: accessToken}
-            });
-            if (characterRequest.data.error) {
-                if (characterRequest.data.error.messages[0] === 'No Results.') {
-                    return msg.channel.createMessage(this.t('define.no-result', {lngs: msg.lang, term: searchQuery}));
-                }
-            }
+            let characterRequest = {data: await anilist.searchCharacters(searchQuery)};
             // console.log(characterRequest.data);
             if (characterRequest.data.length === 1) {
                 let embed = this.buildResponse(characterRequest.data[0]);
@@ -67,7 +53,7 @@ class AnimeSearch extends Command {
 
     buildResponse(data) {
         // console.log(data);
-        let info = data.info.replace(/<br>/g, '');
+        let info = data.info.replace(/<br>/g, '').replace(/__|\*\*/g, '');
         info = info.replace(/\n|\\n/g, '');
         info = info.replace(/&mdash;/g, '');
         info = info.replace(/&#039;/g, '');
